@@ -1,4 +1,4 @@
-import {Controller, Post, Body, UsePipes, UseGuards, Get, Patch, Param} from '@nestjs/common';
+import {Controller, Post, Body, UsePipes, UseGuards, Get, Patch, Param, Delete} from '@nestjs/common';
 import {UsersService} from './users.service';
 import {
     type createUserDto,
@@ -6,7 +6,7 @@ import {
     updatePasswordDto,
     updateUserDto,
     updateUserSchema
-} from "./schema/user.schema";
+} from "./schemas/user.schema";
 import {User} from "./entities/user.entity";
 import {ZodValidationPipe} from "../common/pipes/zod-validation.pipe";
 import {JwtAuthGuard} from "../common/guards/jwt-auth.guard";
@@ -14,7 +14,7 @@ import {CurrentUser} from "../common/decorators/current-user.decorator";
 import {Roles} from "../common/decorators/roles.decorator";
 import {RolesGuard} from "../common/guards/roles.guard";
 import {UserOwnerGuard} from "../common/guards/user-owner.guard";
-import {Role} from "./schema/roles.enum";
+import {Role} from "./schemas/roles.enum";
 
 @Controller('users')
 export class UsersController {
@@ -49,7 +49,6 @@ export class UsersController {
         @Body() updateAccountDto: updateAccountDto,
         @CurrentUser() user: User
     ) {
-        console.log('updateAccountDto', updateAccountDto);
         return this.usersService.updateAccount(user, updateAccountDto);
     }
 
@@ -69,5 +68,12 @@ export class UsersController {
                  @Body(new ZodValidationPipe(updateUserSchema)) updateUserDto: updateUserDto
     ) {
         return this.usersService.update(id, updateUserDto);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async remove(@Param('id') id: string): Promise<void> {
+        return this.usersService.remove(id);
     }
 }

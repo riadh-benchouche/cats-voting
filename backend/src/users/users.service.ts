@@ -8,9 +8,9 @@ import {
     type updatePasswordDto,
     type updateAccountDto,
     createUserSchema,
-} from "./schema/user.schema";
+} from "./schemas/user.schema";
 import * as bcrypt from 'bcrypt';
-import {Role} from "./schema/roles.enum";
+import {Role} from "./schemas/roles.enum";
 
 @Injectable()
 export class UsersService {
@@ -93,5 +93,10 @@ export class UsersService {
     async updateAccount(user: User, updateAccountDto: updateAccountDto) {
         await this.userRepository.update(user.id, updateAccountDto);
         return this.findOne(user.id);
+    }
+
+    async remove(id: string) {
+        await this.userRepository.softDelete(id);
+        return Promise.resolve();
     }
 }

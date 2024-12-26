@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import {Vote} from "../../votes/entities/vote.entity";
 import {UserAuthAccount} from "../../auth-accounts/entities/auth-account.entity";
-import {Role} from "../schema/roles.enum";
+import {Role} from "../schemas/roles.enum";
 import { Exclude } from 'class-transformer';
 
 @Entity('users')
