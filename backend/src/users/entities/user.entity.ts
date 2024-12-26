@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import {Vote} from "../../votes/entities/vote.entity";
 import {UserAuthAccount} from "../../auth-accounts/entities/auth-account.entity";
+import {Role} from "../schema/roles.enum";
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -21,8 +23,12 @@ export class User {
     @Column({unique: true})
     email: string;
 
+    @Exclude()
     @Column({ nullable: true })
     password: string;
+
+    @Column({ default: Role.USER })
+    role: Role;
 
     @OneToMany(() => Vote, vote => vote.user)
     votes: Vote[];
