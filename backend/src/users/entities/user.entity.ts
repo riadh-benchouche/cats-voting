@@ -42,6 +42,7 @@ export class User {
     @UpdateDateColumn()
     updated_at: Date;
 
+    @Exclude()
     @DeleteDateColumn()
     deleted_at: Date;
 }

@@ -10,7 +10,7 @@ import {VotesModule} from './votes/votes.module';
 import {AuthAccountsModule} from './auth-accounts/auth-accounts.module';
 import {AuthModule} from "./auth/auth.module";
 import {jwtConfig} from "./common/config/jwt.config";
-import {CatDataInitializerService} from "./cats/cat-data-initializer.service";
+// import {CatDataInitializerService} from "./cats/cat-data-initializer.service";
 import {HttpModule} from "@nestjs/axios";
 
 @Module({
@@ -31,7 +31,9 @@ import {HttpModule} from "@nestjs/axios";
         HttpModule,
     ],
     controllers: [AppController],
-    providers: [AppService, CatDataInitializerService],
+    providers: [AppService,
+        // CatDataInitializerService
+    ],
 })
 export class AppModule {
 }
