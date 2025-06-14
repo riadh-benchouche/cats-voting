@@ -5,6 +5,7 @@ import {CatsService} from '../cats.service';
 import {Cat} from '../entities/cat.entity';
 import {createCatDto} from '../schemas/cat.schema';
 import {NotFoundException} from '@nestjs/common';
+import {describe} from "node:test";
 
 describe('CatsService', () => {
     let service: CatsService;
@@ -118,6 +119,19 @@ describe('CatsService', () => {
 
             await expect(service.remove(catId)).resolves.toBeUndefined();
             expect(repository.softDelete).toHaveBeenCalledWith(catId);
+        });
+    });
+
+    describe('incrementVotes', () => {
+        it('should increment votes of a cat', async () => {
+            const catId = '1';
+
+            await expect(service.incrementVotes(catId)).resolves.toBeUndefined();
+            expect(repository.increment).toHaveBeenCalledWith(
+                {id: catId},
+                'votes',
+                1,
+            );
         });
     });
 });

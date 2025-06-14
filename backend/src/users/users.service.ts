@@ -9,7 +9,7 @@ import {
     type updateAccountDto,
     createUserSchema,
 } from "./schemas/user.schema";
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import {Role} from "./schemas/roles.enum";
 
 @Injectable()

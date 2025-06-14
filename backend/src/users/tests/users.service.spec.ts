@@ -4,7 +4,7 @@ import {getRepositoryToken} from '@nestjs/typeorm';
 import {User} from '../entities/user.entity';
 import {Repository} from 'typeorm';
 import {Role} from '../schemas/roles.enum';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 describe('UsersService', () => {
     let service: UsersService;

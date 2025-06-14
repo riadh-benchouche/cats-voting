@@ -1,0 +1,61 @@
+services:
+  backend:
+    build: ./backend
+    container_name: catsvoting-backend
+    environment:
+      NODE_ENV: development
+      DB_HOST: ${DB_HOST:-database}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: ${DB_DATABASE:-voting_db}
+      JWT_SECRET: ${JWT_SECRET:-secret_key}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-your_google_client_id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your_google_client_secret}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-your_github_client_id}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-your_github_client_secret}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - catsvoting-network
+
+  frontend:
+    build: ./frontend
+    container_name: catsvoting-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:5173
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - catsvoting-network
+
+  database:
+    image: postgres:15
+    container_name: catsvoting-db
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-voting_db}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - catsvoting-network
+
+volumes:
+  postgres_data:
+
+networks:
+  catsvoting-network:
+    driver: bridge

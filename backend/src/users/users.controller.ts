@@ -2,7 +2,7 @@ import {Controller, Post, Body, UsePipes, UseGuards, Get, Patch, Param, Delete} 
 import {UsersService} from './users.service';
 import {
     type createUserDto,
-    createUserSchema, updateAccountDto, updateAccountSchema,
+    createUserSchema, updateAccountDto,
     updatePasswordDto,
     updateUserDto,
     updateUserSchema

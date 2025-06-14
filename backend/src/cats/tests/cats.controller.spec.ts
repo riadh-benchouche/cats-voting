@@ -3,7 +3,6 @@ import {CatsController} from '../cats.controller';
 import {CatsService} from '../cats.service';
 import {createCatDto, updateCatDto} from '../schemas/cat.schema';
 import {Cat} from '../entities/cat.entity';
-import {NotFoundException} from '@nestjs/common';
 
 describe('CatsController', () => {
     let controller: CatsController;
