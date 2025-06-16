@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {cn} from "@/lib/utils";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
@@ -18,6 +18,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({mode, className, ...props}: AuthFormProps & React.ComponentProps<"div">) {
+    const navigate = useNavigate();
     const {login, register, isLoading} = useAuth();
     const [error, setError] = useState<string>('');
 
@@ -66,14 +67,21 @@ export function AuthForm({mode, className, ...props}: AuthFormProps & React.Comp
                     email: formData.email,
                     password: formData.password,
                 };
-                await login(credentials);
+                const response = await login(credentials);
+
+                if (response.status === 200) {
+                    navigate('/', {replace: true});
+                }
             } else {
                 const credentials: RegisterCredentials = {
                     name: formData.name,
                     email: formData.email,
                     password: formData.password,
                 };
-                await register(credentials);
+                const response = await register(credentials);
+                if (response.status === 200) {
+                    navigate('/', {replace: true});
+                }
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : `Erreur lors de ${isLogin ? 'la connexion' : 'l\'inscription'}`);

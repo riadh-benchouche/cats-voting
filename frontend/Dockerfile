@@ -4,13 +4,13 @@ WORKDIR /app
 
 # Copier les fichiers de configuration
 COPY package.json ./
-COPY frontend/vite.config.js ./
+COPY vite.config.ts ./
 
 # Installer les dépendances
 RUN npm install
 
 # Copier le reste du code
-COPY frontend .
+COPY . .
 
 EXPOSE 5173
 

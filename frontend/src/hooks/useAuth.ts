@@ -17,8 +17,13 @@ export const useAuth = () => {
 
             setToken(response.access_token);
             setUser(response.user);
+
+            return {
+                status: 200,
+                message: 'success',
+            };
         } catch (error) {
-            console.error('Erreur de connexion:', error);
+            console.error('Error', error);
             throw error;
         } finally {
             setIsLoading(false);
@@ -35,6 +40,11 @@ export const useAuth = () => {
 
             setToken(response.access_token);
             setUser(response.user);
+
+            return {
+                status: 200,
+                message: 'success',
+            };
         } catch (error) {
             console.error('Erreur d\'inscription:', error);
             throw error;
@@ -49,6 +59,11 @@ export const useAuth = () => {
 
         setToken(null);
         setUser(null);
+
+        return {
+            status: 200,
+            message: 'success',
+        }
     }, []);
 
     const isAuthenticated = Boolean(token && user);
