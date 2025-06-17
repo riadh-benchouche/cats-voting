@@ -36,12 +36,6 @@ export class CatsController {
         return this.catsService.getFullRanking();
     }
 
-    @Get('random-pair')
-    @UseGuards(JwtAuthGuard)
-    async getRandomPair() {
-        return this.catsService.getRandomPair();
-    }
-
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<Cat> {
         return this.catsService.findOne(id);

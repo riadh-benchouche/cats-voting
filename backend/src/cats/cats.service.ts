@@ -113,4 +113,28 @@ export class CatsService {
         }
         return count;
     }
+
+    async getRandomCatExcluding(excludeIds: string[]): Promise<Cat> {
+        try {
+            const response = await this.catsRepository
+                .createQueryBuilder('cat')
+                .where('cat.id NOT IN (:...excludeIds)', { excludeIds })
+                .orderBy('RANDOM()')
+                .take(1)
+                .getOne();
+
+            if (!response) {
+                return await this.catsRepository
+                    .createQueryBuilder('cat')
+                    .orderBy('RANDOM()')
+                    .take(1)
+                    .getOne();
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Error while fetching random cat excluding IDs:', error);
+            throw error;
+        }
+    }
 }

@@ -4,48 +4,304 @@ import {Vote} from "./entities/vote.entity";
 import {Repository} from "typeorm";
 import {CatsService} from "../cats/cats.service";
 import {Cat} from "../cats/entities/cat.entity";
+import {TournamentSession} from "./entities/tournament-session.entity";
 
 @Injectable()
 export class VotesService {
     constructor(
         @InjectRepository(Vote)
         private votesRepository: Repository<Vote>,
+        @InjectRepository(TournamentSession)
+        private tournamentSessionsRepository: Repository<TournamentSession>,
         private catsService: CatsService
     ) {
     }
 
-    async voteForCat(catId: string, userId: string): Promise<void> {
+    private async createVote(catId: string, userId: string): Promise<void> {
         const cat = await this.catsService.findOne(catId);
-        const vote = this.votesRepository.create(
-            {
-                cat: cat,
-                user: {id: userId}
-            });
+        const vote = this.votesRepository.create({
+            cat: cat,
+            user: {id: userId}
+        });
         await this.votesRepository.save(vote);
         await this.catsService.incrementVotes(catId);
     }
 
-    async hasVoted(catId: string, userId: string): Promise<boolean> {
-        const vote = await this.votesRepository.findOne(
-            {
-                where: {
-                    cat: {id: catId},
-                    user: {id: userId}
-                }
-            });
-        return vote !== null;
+    async startNewTournamentSession(userId: string): Promise<TournamentSession> {
+        // Terminer toute session active existante
+        await this.tournamentSessionsRepository.update(
+            {userId, isActive: true},
+            {isActive: false, endedAt: new Date()}
+        );
+
+        const randomPair = await this.catsService.getRandomPair();
+
+        const session = this.tournamentSessionsRepository.create({
+            userId,
+            currentChampionId: randomPair[0].id,
+            challengerId: randomPair[1].id,
+            round: 1,
+            isActive: true,
+            startedAt: new Date(),
+            lastVoteAt: new Date()
+        });
+
+        return await this.tournamentSessionsRepository.save(session);
     }
 
+    async getCurrentTournamentPair(userId: string): Promise<{
+        champion: Cat;
+        challenger: Cat;
+        round: number;
+        sessionId: string;
+        isComplete?: boolean;
+        totalCats?: number;
+        remainingCats?: number;
+    } | null> {
+        const session = await this.tournamentSessionsRepository.findOne({
+            where: {userId, isActive: true},
+            relations: ['currentChampion', 'challenger']
+        });
+
+        if (!session) {
+            const newSession = await this.startNewTournamentSession(userId);
+            const sessionWithRelations = await this.tournamentSessionsRepository.findOne({
+                where: {id: newSession.id},
+                relations: ['currentChampion', 'challenger']
+            });
+
+            const totalCats = await this.catsService.getTotalCount();
+
+            return {
+                champion: sessionWithRelations!.currentChampion,
+                challenger: sessionWithRelations!.challenger,
+                round: sessionWithRelations!.round,
+                sessionId: sessionWithRelations!.id,
+                totalCats,
+                remainingCats: totalCats - 2 // On a déjà 2 chats en cours
+            };
+        }
+
+        const totalCats = await this.catsService.getTotalCount();
+        const remainingCats = Math.max(0, totalCats - session.round - 1);
+
+        return {
+            champion: session.currentChampion,
+            challenger: session.challenger,
+            round: session.round,
+            sessionId: session.id,
+            totalCats,
+            remainingCats
+        };
+    }
+
+    async voteInTournament(winnerCatId: string, userId: string): Promise<{
+        winner: Cat;
+        loser: Cat;
+        nextChallenger?: Cat;
+        round: number;
+        isNewChampion: boolean;
+        streak: number;
+        isComplete: boolean;
+        finalWinner?: Cat;
+        totalRounds?: number;
+        sessionDuration?: number;
+    }> {
+        const session = await this.tournamentSessionsRepository.findOne({
+            where: {userId, isActive: true},
+            relations: ['currentChampion', 'challenger']
+        });
+
+        if (!session) {
+            throw new Error('No active tournament session found. Please start a new tournament.');
+        }
+
+        const winner = winnerCatId === session.currentChampionId ? session.currentChampion : session.challenger;
+        const loser = winnerCatId === session.currentChampionId ? session.challenger : session.currentChampion;
+        const isNewChampion = winnerCatId !== session.currentChampionId;
+
+        // Enregistrer le vote
+        await this.createVote(winnerCatId, userId);
+
+        // Vérifier combien de chats ont déjà été utilisés dans ce tournoi
+        const totalCats = await this.catsService.getTotalCount();
+        const catsUsedInTournament = session.round + 1; // round actuel + 1 pour le nouveau vote
+
+        // Si on a utilisé tous les chats, le tournoi est terminé
+        if (catsUsedInTournament >= totalCats) {
+            // Terminer la session
+            const sessionDuration = Math.floor((Date.now() - session.startedAt.getTime()) / (1000 * 60));
+
+            await this.tournamentSessionsRepository.update(
+                {id: session.id},
+                {
+                    isActive: false,
+                    endedAt: new Date(),
+                    round: session.round + 1
+                }
+            );
+
+            return {
+                winner,
+                loser,
+                round: session.round + 1,
+                isNewChampion,
+                streak: session.round, // Streak final
+                isComplete: true,
+                finalWinner: winner,
+                totalRounds: session.round + 1,
+                sessionDuration
+            };
+        }
+
+        // Sinon, continuer le tournoi avec un nouveau challenger
+        // Obtenir les IDs de tous les chats déjà utilisés
+        const usedCatIds = await this.getUsedCatsInSession(session.id);
+        usedCatIds.push(winner.id, loser.id);
+
+        const nextChallenger = await this.catsService.getRandomCatExcluding(usedCatIds);
+
+        // Mettre à jour la session
+        session.currentChampionId = winner.id;
+        session.currentChampion = winner;
+        session.challengerId = nextChallenger.id;
+        session.challenger = nextChallenger;
+        session.round += 1;
+        session.lastVoteAt = new Date();
+
+        const updatedSession = await this.tournamentSessionsRepository.save(session);
+
+        return {
+            winner,
+            loser,
+            nextChallenger,
+            round: updatedSession.round,
+            isNewChampion,
+            streak: this.calculateCurrentStreak(session, winner.id),
+            isComplete: false
+        };
+    }
+
+    // NOUVELLE MÉTHODE: Obtenir les chats utilisés dans une session
+    private async getUsedCatsInSession(sessionId: string): Promise<string[]> {
+        // Récupérer tous les votes de la session via les timestamps
+        const session = await this.tournamentSessionsRepository.findOne({
+            where: {id: sessionId}
+        });
+
+        if (!session) return [];
+
+        const votesInSession = await this.votesRepository
+            .createQueryBuilder('vote')
+            .leftJoinAndSelect('vote.cat', 'cat')
+            .leftJoinAndSelect('vote.user', 'user')
+            .where('user.id = :userId', {userId: session.userId})
+            .andWhere('vote.created_at >= :startedAt', {startedAt: session.startedAt})
+            .getMany();
+
+        return votesInSession.map(vote => vote.cat.id);
+    }
+
+    // NOUVELLE MÉTHODE: Calculer le streak actuel du champion
+    private calculateCurrentStreak(session: TournamentSession, currentChampionId: string): number {
+        // Si c'est un nouveau champion, le streak est 1
+        // Sinon, c'est le nombre de rounds depuis que ce chat est champion
+        // Pour simplifier, on utilise juste le round - 1 (à améliorer si besoin)
+        return session.round;
+    }
+
+    async getTournamentStats(userId: string): Promise<{
+        currentChampion: Cat | null;
+        round: number;
+        totalVotes: number;
+        sessionDuration: number;
+        isActive: boolean;
+        streak: number;
+        sessionsHistory: TournamentSession[];
+        totalCats?: number;
+        remainingCats?: number;
+        progress?: number; // Pourcentage de progression
+    }> {
+        const activeSession = await this.tournamentSessionsRepository.findOne({
+            where: {userId, isActive: true},
+            relations: ['currentChampion']
+        });
+
+        const allSessions = await this.tournamentSessionsRepository.find({
+            where: {userId},
+            relations: ['currentChampion'],
+            order: {createdAt: 'DESC'},
+            take: 10
+        });
+
+        if (!activeSession) {
+            return {
+                currentChampion: null,
+                round: 0,
+                totalVotes: 0,
+                sessionDuration: 0,
+                isActive: false,
+                streak: 0,
+                sessionsHistory: allSessions
+            };
+        }
+
+        const sessionDuration = Math.floor((Date.now() - activeSession.startedAt.getTime()) / (1000 * 60));
+        const streak = activeSession.round - 1;
+        const totalCats = await this.catsService.getTotalCount();
+        const remainingCats = Math.max(0, totalCats - activeSession.round - 1);
+        const progress = Math.round((activeSession.round / totalCats) * 100);
+
+        return {
+            currentChampion: activeSession.currentChampion,
+            round: activeSession.round,
+            totalVotes: activeSession.round - 1,
+            sessionDuration,
+            isActive: activeSession.isActive,
+            streak,
+            sessionsHistory: allSessions,
+            totalCats,
+            remainingCats,
+            progress
+        };
+    }
+
+    async endTournamentSession(userId: string): Promise<{
+        finalChampion: Cat | null;
+        totalRounds: number;
+        sessionDuration: number;
+    }> {
+        const session = await this.tournamentSessionsRepository.findOne({
+            where: {userId, isActive: true},
+            relations: ['currentChampion']
+        });
+
+        if (!session) {
+            throw new Error('No active tournament session to end');
+        }
+
+        const sessionDuration = Math.floor((Date.now() - session.startedAt.getTime()) / (1000 * 60));
+
+        await this.tournamentSessionsRepository.update(
+            {id: session.id},
+            {isActive: false, endedAt: new Date()}
+        );
+
+        return {
+            finalChampion: session.currentChampion,
+            totalRounds: session.round,
+            sessionDuration
+        };
+    }
+
+    // Méthode existante inchangée
     async getUserVotes(userId: string): Promise<{
         votes: Vote[];
         totalVotes: number;
         favoriteCats: Cat[];
-        stats: {
-            totalVoted: number;
-            votingRate: number;
-        }
+        totalTournaments: number;
+        bestStreak: number;
     }> {
-        // Récupérer tous les votes de l'utilisateur
         const userVotes = await this.votesRepository.find({
             where: {user: {id: userId}},
             relations: ['cat'],
@@ -61,19 +317,20 @@ export class VotesService {
             favoriteCats = favoriteCats.slice(0, 3);
         }
 
-        // Stats
-        const totalCats = await this.catsService.getTotalCount();
-        const totalVoted = userVotes.length;
-        const votingRate = totalCats > 0 ? Math.round((totalVoted / totalCats) * 100) : 0;
+        const allSessions = await this.tournamentSessionsRepository.find({
+            where: {userId}
+        });
+
+        const bestStreak = allSessions.length > 0
+            ? Math.max(...allSessions.map(s => s.round - 1))
+            : 0;
 
         return {
             votes: userVotes,
             totalVotes: userVotes.length,
             favoriteCats,
-            stats: {
-                totalVoted,
-                votingRate
-            }
+            totalTournaments: allSessions.length,
+            bestStreak
         };
     }
 }
