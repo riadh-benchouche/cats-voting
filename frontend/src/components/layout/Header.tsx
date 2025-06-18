@@ -19,7 +19,7 @@ export default function Header() {
     const navigation = [
         {name: 'Accueil', href: '/', icon: Home, public: true},
         {name: 'Voter', href: '/app/vote', icon: Vote, public: false},
-        {name: 'Classement', href: '/ranking', icon: Trophy, public: false},
+        {name: 'Classement', href: '/ranking', icon: Trophy, public: true},
         {name: 'Profil', href: '/app/profile', icon: User, public: false},
     ];
 
@@ -53,7 +53,7 @@ export default function Header() {
 
     return (
         <header
-            className="bg-card border-b border-border sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-card/95">
+            className="bg-card py-2 border-b border-border sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-card/95">
             <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8">
                 {/* Logo */}
                 <div className="flex lg:flex-1">

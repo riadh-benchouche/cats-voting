@@ -1,4 +1,4 @@
-import {AuthForm} from "@/components/auth-form.tsx";
+import {AuthForm} from "@/components/AuthForm.tsx";
 export default function LoginPage() {
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
