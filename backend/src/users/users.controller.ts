@@ -58,8 +58,6 @@ export class UsersController {
         @Body() updatePasswordDto: updatePasswordDto,
         @CurrentUser() user: User
     ) {
-        console.log(updatePasswordDto);
-        return
         return this.usersService.updatePassword(user, updatePasswordDto);
     }
 
