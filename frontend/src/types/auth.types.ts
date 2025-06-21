@@ -32,3 +32,13 @@ export interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
 }
+
+export interface UpdateAccountDto {
+    name?: string;
+}
+
+export interface UpdatePasswordDto {
+    oldPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+}

@@ -28,7 +28,6 @@ export class VotesService {
     }
 
     async startNewTournamentSession(userId: string): Promise<TournamentSession> {
-        // Terminer toute session active existante
         await this.tournamentSessionsRepository.update(
             {userId, isActive: true},
             {isActive: false, endedAt: new Date()}
@@ -78,7 +77,7 @@ export class VotesService {
                 round: sessionWithRelations!.round,
                 sessionId: sessionWithRelations!.id,
                 totalCats,
-                remainingCats: totalCats - 2 // On a déjà 2 chats en cours
+                remainingCats: totalCats - 2
             };
         }
 
@@ -120,14 +119,11 @@ export class VotesService {
         const loser = winnerCatId === session.currentChampionId ? session.challenger : session.currentChampion;
         const isNewChampion = winnerCatId !== session.currentChampionId;
 
-        // Enregistrer le vote
         await this.createVote(winnerCatId, userId);
 
-        // Vérifier combien de chats ont déjà été utilisés dans ce tournoi
         const totalCats = await this.catsService.getTotalCount();
-        const catsUsedInTournament = session.round + 1; // round actuel + 1 pour le nouveau vote
+        const catsUsedInTournament = session.round + 1;
 
-        // Si on a utilisé tous les chats, le tournoi est terminé
         if (catsUsedInTournament >= totalCats) {
             // Terminer la session
             const sessionDuration = Math.floor((Date.now() - session.startedAt.getTime()) / (1000 * 60));
@@ -146,7 +142,7 @@ export class VotesService {
                 loser,
                 round: session.round + 1,
                 isNewChampion,
-                streak: session.round, // Streak final
+                streak: session.round,
                 isComplete: true,
                 finalWinner: winner,
                 totalRounds: session.round + 1,
@@ -154,14 +150,11 @@ export class VotesService {
             };
         }
 
-        // Sinon, continuer le tournoi avec un nouveau challenger
-        // Obtenir les IDs de tous les chats déjà utilisés
         const usedCatIds = await this.getUsedCatsInSession(session.id);
         usedCatIds.push(winner.id, loser.id);
 
         const nextChallenger = await this.catsService.getRandomCatExcluding(usedCatIds);
 
-        // Mettre à jour la session
         session.currentChampionId = winner.id;
         session.currentChampion = winner;
         session.challengerId = nextChallenger.id;
@@ -182,9 +175,7 @@ export class VotesService {
         };
     }
 
-    // NOUVELLE MÉTHODE: Obtenir les chats utilisés dans une session
     private async getUsedCatsInSession(sessionId: string): Promise<string[]> {
-        // Récupérer tous les votes de la session via les timestamps
         const session = await this.tournamentSessionsRepository.findOne({
             where: {id: sessionId}
         });
@@ -202,11 +193,7 @@ export class VotesService {
         return votesInSession.map(vote => vote.cat.id);
     }
 
-    // NOUVELLE MÉTHODE: Calculer le streak actuel du champion
     private calculateCurrentStreak(session: TournamentSession, currentChampionId: string): number {
-        // Si c'est un nouveau champion, le streak est 1
-        // Sinon, c'est le nombre de rounds depuis que ce chat est champion
-        // Pour simplifier, on utilise juste le round - 1 (à améliorer si besoin)
         return session.round;
     }
 
@@ -220,7 +207,7 @@ export class VotesService {
         sessionsHistory: TournamentSession[];
         totalCats?: number;
         remainingCats?: number;
-        progress?: number; // Pourcentage de progression
+        progress?: number;
     }> {
         const activeSession = await this.tournamentSessionsRepository.findOne({
             where: {userId, isActive: true},
@@ -294,7 +281,6 @@ export class VotesService {
         };
     }
 
-    // Méthode existante inchangée
     async getUserVotes(userId: string): Promise<{
         votes: Vote[];
         totalVotes: number;

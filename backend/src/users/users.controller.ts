@@ -43,7 +43,7 @@ export class UsersController {
         return this.usersService.findOne(id);
     }
 
-    @Patch('account')
+    @Patch(':userId/account')
     @UseGuards(JwtAuthGuard, UserOwnerGuard)
     async updateAccount(
         @Body() updateAccountDto: updateAccountDto,
@@ -52,12 +52,14 @@ export class UsersController {
         return this.usersService.updateAccount(user, updateAccountDto);
     }
 
-    @Patch('password')
+    @Patch(':userId/password')
     @UseGuards(JwtAuthGuard, UserOwnerGuard)
     async updatePassword(
         @Body() updatePasswordDto: updatePasswordDto,
         @CurrentUser() user: User
     ) {
+        console.log(updatePasswordDto);
+        return
         return this.usersService.updatePassword(user, updatePasswordDto);
     }
 

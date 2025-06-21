@@ -4,10 +4,10 @@ import {HttpExceptionFilter} from "./common/filters/http-exception.filter";
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    // app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalFilters(new HttpExceptionFilter());
     app.enableCors({
         origin: process.env.CORS_ORIGIN || '*',
-        methods: 'GET,PUT,POST,DELETE',
+        methods: 'GET,PUT,POST,DELETE,PATCH',
         credentials: true,
         allowedHeaders: 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
     });

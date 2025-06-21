@@ -5,8 +5,8 @@ export class UserOwnerGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
-        const userId = request.params.id;
+        const targetUserId = request.params.userId;
 
-        return user.id === userId || user.role === 'admin';
+        return user.id === targetUserId || user.role === 'admin';
     }
 }

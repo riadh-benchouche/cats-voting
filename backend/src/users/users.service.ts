@@ -82,7 +82,7 @@ export class UsersService {
             select: ['password'],
             where: {id: user.id}
         });
-        const isValidPassword = await bcrypt.compare(oldPassword, currentUser.password);
+        const isValidPassword = await bcrypt.compare(oldPassword, currentUser.password) && oldPassword !== null
         if (!isValidPassword) throw new UnauthorizedException('Invalid current password');
 
         user.password = await bcrypt.hash(newPassword, 10);

@@ -4,6 +4,10 @@ import {authService} from '@/services/authService';
 
 export const useAuth = () => {
     const [user, setUser] = useState<User | null>(authService.getUser());
+    const updateUser = useCallback((user: User) => {
+        setUser(user);
+        authService.setUser(user);
+    }, []);
     const [token, setToken] = useState<string | null>(authService.getToken());
     const [isLoading, setIsLoading] = useState(false);
 
@@ -76,5 +80,6 @@ export const useAuth = () => {
         register,
         logout,
         isAuthenticated,
+        updateUser
     };
 };

@@ -21,7 +21,7 @@ class VotesService {
      */
     async getUserVotesHistory(): Promise<UserVotesHistory> {
         try {
-            const response = await apiClient.get<UserVotesHistory>('/votes/my-history');
+            const response = await apiClient.get<UserVotesHistory>('/votes/history');
             return response.data;
         } catch (error) {
             console.error('Error while fetching user votes history:', error);
