@@ -1,4 +1,4 @@
-import {AuthForm} from "@/components/AuthForm.tsx";
+import {AuthForm} from "@/components/features/auth/AuthForm.tsx";
 
 export default function LoginPage() {
     return (
