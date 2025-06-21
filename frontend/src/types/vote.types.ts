@@ -17,8 +17,3 @@ export interface UserVotesHistory {
     totalTournaments: number;
     bestStreak: number;
 }
-
-export interface VoteStats {
-    totalVoted: number;
-    votingRate: number;
-}
