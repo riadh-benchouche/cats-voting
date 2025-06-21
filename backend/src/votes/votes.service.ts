@@ -170,7 +170,7 @@ export class VotesService {
             nextChallenger,
             round: updatedSession.round,
             isNewChampion,
-            streak: this.calculateCurrentStreak(session, winner.id),
+            streak: this.calculateCurrentStreak(session),
             isComplete: false
         };
     }
@@ -193,7 +193,7 @@ export class VotesService {
         return votesInSession.map(vote => vote.cat.id);
     }
 
-    private calculateCurrentStreak(session: TournamentSession, currentChampionId: string): number {
+    private calculateCurrentStreak(session: TournamentSession): number {
         return session.round;
     }
 
