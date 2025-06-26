@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copier les fichiers de configuration
+COPY package.json package-lock.json ./
+
+# Installer les dépendances
+RUN npm ci
+
+# Copier le code source
+COPY . .
+
+# Build de l'application NestJS
+RUN npm run build
+
+# Exposer le port
+EXPOSE 3000
+
+# Utiliser la version compilée
+CMD ["npm", "run", "start:prod"]
