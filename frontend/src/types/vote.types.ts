@@ -16,4 +16,5 @@ export interface UserVotesHistory {
     favoriteCats: Cat[];
     totalTournaments: number;
     bestStreak: number;
+    stats: [];
 }

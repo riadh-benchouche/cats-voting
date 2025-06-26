@@ -27,10 +27,20 @@ export interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    login: (credentials: LoginCredentials) => Promise<void>;
-    register: (credentials: RegisterCredentials) => Promise<void>;
-    logout: () => void;
+    login: (credentials: LoginCredentials) => Promise<{
+        status: number;
+        message: string;
+    }>;
+    register: (credentials: RegisterCredentials) => Promise<{
+        status: number;
+        message: string;
+    }>;
+    logout: () => {
+        status: number;
+        message: string;
+    };
     isAuthenticated: boolean;
+    updateUser: (user: User) => void;
 }
 
 export interface UpdateAccountDto {
